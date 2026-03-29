@@ -535,9 +535,45 @@ export default function GamePage() {
                           : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm'
                       }`}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      {/* 消息内容渲染 */}
+                      {message.role === 'assistant' && message.content.includes('![') ? (
+                        // 检测是否包含图片Markdown并渲染
+                        <div className="text-sm leading-relaxed">
+                          {(() => {
+                            const parts = message.content.split(/!\[([^\]]*)\]\(([^)]+)\)/g);
+                            return parts.map((part, index) => {
+                              if (index % 3 === 1) {
+                                // 图片alt文本
+                                return null;
+                              } else if (index % 3 === 2) {
+                                // 图片URL
+                                return (
+                                  <div key={index} className="mt-2 mb-2">
+                                    <img 
+                                      src={part} 
+                                      alt="私密照片" 
+                                      className="max-w-full rounded-lg shadow-md"
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                );
+                              } else if (part) {
+                                // 普通文本
+                                return (
+                                  <p key={index} className="whitespace-pre-wrap">
+                                    {part}
+                                  </p>
+                                );
+                              }
+                              return null;
+                            });
+                          })()}
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -738,6 +774,38 @@ export default function GamePage() {
                   </li>
                 </ul>
               </div>
+
+              <Separator />
+
+              {/* 最近对话摘要 */}
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                  <MessageSquare className="w-4 h-4 text-blue-500" />
+                  最近对话
+                </h4>
+                <div className="space-y-2">
+                  {messages.slice(-3).reverse().filter(m => m.role !== 'system').map((msg) => (
+                    <div key={msg.id} className={`p-2 rounded text-xs ${
+                      msg.role === 'user' 
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-right' 
+                        : 'bg-pink-50 dark:bg-pink-900/20'
+                    }`}>
+                      <div className="font-semibold mb-1">
+                        {msg.role === 'user' ? '我' : gameState.girlfriendName}
+                      </div>
+                      <div className="text-muted-foreground line-clamp-2">
+                        {msg.content}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(msg.timestamp).toLocaleTimeString('zh-CN', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -777,9 +845,45 @@ export default function GamePage() {
                           : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm'
                       }`}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      {/* 消息内容渲染 */}
+                      {message.role === 'assistant' && message.content.includes('![') ? (
+                        // 检测是否包含图片Markdown并渲染
+                        <div className="text-sm leading-relaxed">
+                          {(() => {
+                            const parts = message.content.split(/!\[([^\]]*)\]\(([^)]+)\)/g);
+                            return parts.map((part, index) => {
+                              if (index % 3 === 1) {
+                                // 图片alt文本
+                                return null;
+                              } else if (index % 3 === 2) {
+                                // 图片URL
+                                return (
+                                  <div key={index} className="mt-2 mb-2">
+                                    <img 
+                                      src={part} 
+                                      alt="私密照片" 
+                                      className="max-w-full rounded-lg shadow-md"
+                                      loading="lazy"
+                                    />
+                                  </div>
+                                );
+                              } else if (part) {
+                                // 普通文本
+                                return (
+                                  <p key={index} className="whitespace-pre-wrap">
+                                    {part}
+                                  </p>
+                                );
+                              }
+                              return null;
+                            });
+                          })()}
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-gray-400 dark:text-gray-500">
