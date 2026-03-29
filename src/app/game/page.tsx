@@ -210,8 +210,8 @@ export default function GamePage() {
       
       if (newConversationTurns >= nextPhotoTurn && newAffectionLevel !== 'stranger' && newAffectionLevel !== 'acquaintance') {
         shouldAutoSendPhoto = true;
-        // 设置下一次发照片的时间（3-10轮后）
-        nextPhotoTurn = newConversationTurns + Math.floor(Math.random() * 8) + 3;
+        // 设置下一次发照片的时间（3-5轮后）
+        nextPhotoTurn = newConversationTurns + Math.floor(Math.random() * 3) + 3;
       }
 
       const updatedState = {
@@ -252,20 +252,20 @@ export default function GamePage() {
 
   const handleAutoSendPhoto = async (currentState: GameState) => {
     try {
-      // 根据好感度等级生成不同场景的照片
+      // 根据好感度等级生成不同场景的自拍或生活照
       let scenePrompt = '';
       switch (currentState.affectionLevel) {
         case 'friend':
-          scenePrompt = 'taking a selfie in a casual setting, smiling naturally, bright lighting';
+          scenePrompt = 'casual selfie photo, taking photo of herself, smiling naturally, daily life scene, natural lighting, holding phone selfie style';
           break;
         case 'close':
-          scenePrompt = 'in a romantic indoor setting, soft lighting, intimate atmosphere, gentle smile';
+          scenePrompt = 'intimate daily life photo, cozy indoor setting, candid moment, soft natural light, relaxed pose, warm atmosphere';
           break;
         case 'lover':
-          scenePrompt = 'in a warm and loving pose, gentle smile, romantic lighting, wearing elegant clothes, affectionate';
+          scenePrompt = 'romantic selfie, loving gaze, gentle smile, intimate moment, warm lighting, natural beauty, wearing comfortable casual clothes';
           break;
         default:
-          scenePrompt = 'standing naturally, smiling, natural lighting';
+          scenePrompt = 'simple daily life photo, natural standing pose, smiling, bright natural lighting, casual everyday setting';
       }
 
       const response = await fetch('/api/generate-photo', {
@@ -286,7 +286,7 @@ export default function GamePage() {
         const photoMessage: Message = {
           id: `photo-${Date.now()}`,
           role: 'assistant',
-          content: `给你看看我的样子吧～\n\n![照片](${data.imageUrl})`,
+          content: `给你看看我刚才拍的自拍吧～\n\n![照片](${data.imageUrl})`,
           timestamp: Date.now(),
         };
 
@@ -378,16 +378,16 @@ export default function GamePage() {
       let scenePrompt = '';
       switch (gameState.affectionLevel) {
         case 'friend':
-          scenePrompt = 'taking a selfie in a casual setting, smiling naturally';
+          scenePrompt = 'casual selfie photo, taking photo of herself, smiling naturally, daily life scene, natural lighting, holding phone selfie style';
           break;
         case 'close':
-          scenePrompt = 'in a romantic indoor setting, soft lighting, intimate atmosphere';
+          scenePrompt = 'intimate daily life photo, cozy indoor setting, candid moment, soft natural light, relaxed pose, warm atmosphere';
           break;
         case 'lover':
-          scenePrompt = 'in a warm and loving pose, gentle smile, romantic lighting, wearing elegant clothes';
+          scenePrompt = 'romantic selfie, loving gaze, gentle smile, intimate moment, warm lighting, natural beauty, wearing comfortable casual clothes';
           break;
         default:
-          scenePrompt = 'standing naturally, smiling';
+          scenePrompt = 'simple daily life photo, natural standing pose, smiling, bright natural lighting, casual everyday setting';
       }
 
       const response = await fetch('/api/generate-photo', {
@@ -408,7 +408,7 @@ export default function GamePage() {
         const photoMessage: Message = {
           id: `photo-${Date.now()}`,
           role: 'assistant',
-          content: `给你看看我的样子吧～\n\n![照片](${data.imageUrl})`,
+          content: `给你看看我刚才拍的自拍吧～\n\n![照片](${data.imageUrl})`,
           timestamp: Date.now(),
         };
 
@@ -780,7 +780,7 @@ export default function GamePage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>
-                    <span>每3-10轮对话会自动发送一张私密照片</span>
+                    <span>每3-5轮对话会自动发送一张自拍或生活照</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>

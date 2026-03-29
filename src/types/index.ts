@@ -226,7 +226,7 @@ export const createInitialGameState = (): Omit<GameState, 'girlfriendType' | 'gi
   conversationTurns: 0,
   lastActiveTime: Date.now(),
   unlockedPhotos: ['initial-1', 'initial-2'], // 初始解锁2张照片
-  nextPhotoTurn: Math.floor(Math.random() * 8) + 3, // 3-10轮随机
+  nextPhotoTurn: Math.floor(Math.random() * 3) + 3, // 3-5轮随机
   isGameStarted: false
 });
 
