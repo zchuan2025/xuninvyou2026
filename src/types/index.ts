@@ -195,6 +195,7 @@ export interface GameState {
   
   // 解锁内容
   unlockedPhotos: string[];
+  nextPhotoTurn: number; // 下一次自动发照片的轮次
   
   // 系统状态
   isGameStarted: boolean;
@@ -217,6 +218,7 @@ export const createInitialGameState = (): Omit<GameState, 'girlfriendType' | 'gi
   conversationTurns: 0,
   lastActiveTime: Date.now(),
   unlockedPhotos: ['initial-1', 'initial-2'], // 初始解锁2张照片
+  nextPhotoTurn: Math.floor(Math.random() * 8) + 3, // 3-10轮随机
   isGameStarted: false
 });
 

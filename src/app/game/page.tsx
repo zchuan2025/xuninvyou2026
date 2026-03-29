@@ -169,7 +169,7 @@ export default function GamePage() {
         gameState.affectionScore,
         isPositive
       );
-      const newAffectionScore = Math.max(0, Math.min(100, gameState.affectionScore + affectionChange));
+      const newAffectionScore = Math.max(-20, Math.min(100, gameState.affectionScore + affectionChange));
       const newAffectionLevel = updateAffectionLevel(newAffectionScore);
       const detectedPreference = analyzeUserPreference(userMessage.content);
       const newUserPreferences = detectedPreference 
@@ -181,22 +181,42 @@ export default function GamePage() {
         detectedPreference
       );
 
+      const newConversationTurns = gameState.conversationTurns + 1;
+      
+      // 检查是否需要自动发送照片
+      let shouldAutoSendPhoto = false;
+      let nextPhotoTurn = gameState.nextPhotoTurn || 3;
+      
+      if (newConversationTurns >= nextPhotoTurn && newAffectionLevel !== 'stranger' && newAffectionLevel !== 'acquaintance') {
+        shouldAutoSendPhoto = true;
+        // 设置下一次发照片的时间（3-10轮后）
+        nextPhotoTurn = newConversationTurns + Math.floor(Math.random() * 8) + 3;
+      }
+
       const updatedState = {
         ...gameState,
         messages: [...gameState.messages, userMessage, {
           ...aiMessage,
           content: accumulatedContent
         }],
-        conversationTurns: gameState.conversationTurns + 1,
+        conversationTurns: newConversationTurns,
         lastActiveTime: Date.now(),
         affectionScore: newAffectionScore,
         affectionLevel: newAffectionLevel,
         personality: newPersonality,
         userPreferences: newUserPreferences,
+        nextPhotoTurn: nextPhotoTurn,
       };
 
       setGameState(updatedState);
       localStorage.setItem('gameState', JSON.stringify(updatedState));
+
+      // 如果需要自动发送照片
+      if (shouldAutoSendPhoto) {
+        setTimeout(() => {
+          handleAutoSendPhoto(updatedState);
+        }, 1000);
+      }
 
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -207,6 +227,63 @@ export default function GamePage() {
             : msg
         )
       );
+    }
+  };
+
+  const handleAutoSendPhoto = async (currentState: GameState) => {
+    try {
+      // 根据好感度等级生成不同场景的照片
+      let scenePrompt = '';
+      switch (currentState.affectionLevel) {
+        case 'friend':
+          scenePrompt = 'taking a selfie in a casual setting, smiling naturally, bright lighting';
+          break;
+        case 'close':
+          scenePrompt = 'in a romantic indoor setting, soft lighting, intimate atmosphere, gentle smile';
+          break;
+        case 'lover':
+          scenePrompt = 'in a warm and loving pose, gentle smile, romantic lighting, wearing elegant clothes, affectionate';
+          break;
+        default:
+          scenePrompt = 'standing naturally, smiling, natural lighting';
+      }
+
+      const response = await fetch('/api/generate-photo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: scenePrompt,
+          referenceImage: currentState.girlfriendPhoto,
+          gameState: currentState,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const photoMessage: Message = {
+          id: `photo-${Date.now()}`,
+          role: 'assistant',
+          content: `给你看看我的样子吧～\n\n![照片](${data.imageUrl})`,
+          timestamp: Date.now(),
+        };
+
+        setMessages(prev => [...prev, photoMessage]);
+
+        const updatedState = {
+          ...currentState,
+          messages: [...currentState.messages, photoMessage],
+          unlockedPhotos: [...currentState.unlockedPhotos, data.imageUrl],
+          lastActiveTime: Date.now(),
+        };
+
+        setGameState(updatedState);
+        localStorage.setItem('gameState', JSON.stringify(updatedState));
+      }
+    } catch (error) {
+      console.error('Failed to auto send photo:', error);
     }
   };
 
@@ -312,7 +389,7 @@ export default function GamePage() {
         const photoMessage: Message = {
           id: `photo-${Date.now()}`,
           role: 'assistant',
-          content: `这是 ${gameState.girlfriendName} 发来的照片！\n\n![照片](${data.imageUrl})`,
+          content: `给你看看我的样子吧～\n\n![照片](${data.imageUrl})`,
           timestamp: Date.now(),
         };
 
@@ -630,17 +707,17 @@ export default function GamePage() {
                   <div className="text-2xl font-bold text-purple-500">
                     {gameState.unlockedPhotos.length}
                   </div>
-                  <div className="text-xs text-muted-foreground">解锁照片</div>
+                  <div className="text-xs text-muted-foreground">私密照片</div>
                 </div>
               </div>
 
               <Separator />
 
-              {/* 照片解锁说明 */}
+              {/* 私密照片解锁说明 */}
               <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/20 dark:to-purple-950/20 p-4 rounded-lg">
                 <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
                   <ImageIcon className="w-4 h-4 text-purple-500" />
-                  如何解锁照片
+                  如何解锁私密照片
                 </h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -649,49 +726,17 @@ export default function GamePage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>
-                    <span>达到"朋友"等级(好感度≥40)可点击相机按钮生成</span>
+                    <span>每3-10轮对话会自动发送一张私密照片</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-pink-500">•</span>
+                    <span>达到"朋友"等级(好感度≥40)可手动点击相机按钮生成</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>
                     <span>好感度越高，照片越亲密浪漫</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-pink-500">•</span>
-                    <span>每次对话都有机会提升好感度</span>
-                  </li>
                 </ul>
-              </div>
-
-              <Separator />
-
-              {/* 最近对话摘要 */}
-              <div>
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
-                  <MessageSquare className="w-4 h-4 text-blue-500" />
-                  最近对话
-                </h4>
-                <div className="space-y-2">
-                  {messages.slice(-3).reverse().filter(m => m.role !== 'system').map((msg) => (
-                    <div key={msg.id} className={`p-2 rounded text-xs ${
-                      msg.role === 'user' 
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-right' 
-                        : 'bg-pink-50 dark:bg-pink-900/20'
-                    }`}>
-                      <div className="font-semibold mb-1">
-                        {msg.role === 'user' ? '我' : gameState.girlfriendName}
-                      </div>
-                      <div className="text-muted-foreground line-clamp-2">
-                        {msg.content}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {new Date(msg.timestamp).toLocaleTimeString('zh-CN', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
