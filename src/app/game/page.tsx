@@ -9,6 +9,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Heart, 
   MessageSquare, 
@@ -22,7 +28,8 @@ import {
   Moon,
   Sun,
   MoreHorizontal,
-  User
+  User,
+  History
 } from 'lucide-react';
 import { 
   GameState, 
@@ -48,6 +55,7 @@ export default function GamePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -366,12 +374,18 @@ export default function GamePage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={gameState.girlfriendPhoto} alt={gameState.girlfriendName} />
-              <AvatarFallback className="bg-pink-200 text-pink-700">
-                {gameState.girlfriendName.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <Button
+              variant="ghost"
+              className="p-0 h-auto hover:bg-white/20"
+              onClick={() => setShowSidebar(!showSidebar)}
+            >
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={gameState.girlfriendPhoto} alt={gameState.girlfriendName} />
+                <AvatarFallback className="bg-pink-200 text-pink-700">
+                  {gameState.girlfriendName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
             <div>
               <h3 className="font-semibold text-white">{gameState.girlfriendName}</h3>
               <p className="text-xs text-white/80">{personality.name}</p>
@@ -382,8 +396,18 @@ export default function GamePage() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowHistory(true)}
+            className="text-white hover:bg-white/20"
+            title="查看历史记录"
+          >
+            <History className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowSidebar(!showSidebar)}
             className="text-white hover:bg-white/20"
+            title="好友信息"
           >
             <User className="w-5 h-5" />
           </Button>
@@ -392,6 +416,7 @@ export default function GamePage() {
             size="icon"
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="text-white hover:bg-white/20"
+            title="切换主题"
           >
             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
@@ -410,12 +435,18 @@ export default function GamePage() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {message.role === 'assistant' && (
-                    <Avatar className="w-10 h-10 flex-shrink-0 mr-3">
-                      <AvatarImage src={gameState.girlfriendPhoto} />
-                      <AvatarFallback className="bg-pink-200 text-pink-700 text-sm">
-                        {gameState.girlfriendName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <Button
+                      variant="ghost"
+                      className="p-0 h-10 w-10 flex-shrink-0 mr-3 hover:bg-white/10"
+                      onClick={() => setShowSidebar(!showSidebar)}
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={gameState.girlfriendPhoto} />
+                        <AvatarFallback className="bg-pink-200 text-pink-700 text-sm">
+                          {gameState.girlfriendName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
                   )}
                   <div className={`max-w-[70%] ${message.role === 'user' ? 'flex flex-col items-end' : ''}`}>
                     <div
@@ -666,6 +697,69 @@ export default function GamePage() {
           </div>
         )}
       </div>
+
+      {/* 历史记录对话框 */}
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-pink-500" />
+              聊天历史记录
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {message.role === 'assistant' && (
+                    <Avatar className="w-8 h-8 flex-shrink-0 mr-2">
+                      <AvatarImage src={gameState?.girlfriendPhoto} />
+                      <AvatarFallback className="bg-pink-200 text-pink-700 text-xs">
+                        {gameState?.girlfriendName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className={`max-w-[80%] ${message.role === 'user' ? 'flex flex-col items-end' : ''}`}>
+                    <div
+                      className={`px-3 py-2 shadow-sm ${
+                        message.role === 'user'
+                          ? 'bg-[#95EC69] text-black rounded-tr-sm'
+                          : message.role === 'system'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800 rounded-sm'
+                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm'
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(message.timestamp).toLocaleString('zh-CN', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  {message.role === 'user' && (
+                    <Avatar className="w-8 h-8 flex-shrink-0 ml-2">
+                      <AvatarFallback className="bg-blue-500 text-white text-xs">
+                        <User className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

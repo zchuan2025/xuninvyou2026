@@ -275,21 +275,21 @@ export default function SetupPage() {
                     {isGeneratingPhotos ? '生成中...' : 'AI生成照片'}
                   </Button>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {isGeneratingPhotos ? '正在为你生成5张照片...' : '一键生成5张不同风格的照片'}
+                    {isGeneratingPhotos ? '正在为你生成3张照片...' : '一键生成3张不同风格的照片'}
                   </span>
                 </div>
 
                 {/* 生成的照片网格 */}
                 {isGeneratingPhotos && (
-                  <div className="grid grid-cols-5 gap-3">
-                    {Array.from({ length: 5 }).map((_, i) => (
+                  <div className="grid grid-cols-3 gap-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
                       <Skeleton key={i} className="aspect-square rounded-lg" />
                     ))}
                   </div>
                 )}
 
                 {generatedPhotos.length > 0 && (
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {generatedPhotos.map((photo, index) => (
                       <div
                         key={index}

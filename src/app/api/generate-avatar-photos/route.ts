@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
     // 根据性格类型生成不同的照片描述
     const prompts = getPromptsByPersonality(personalityType);
 
-    // 生成5张照片
+    // 生成3张照片
     const photos: string[] = [];
     
-    for (let i = 0; i < prompts.length; i++) {
+    for (let i = 0; i < Math.min(prompts.length, 3); i++) {
       try {
         const response = await client.generate({
           prompt: prompts[i],
