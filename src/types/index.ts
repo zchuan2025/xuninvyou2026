@@ -165,6 +165,14 @@ export interface Message {
   emotion?: string; // 消息情绪标签
 }
 
+// 会话类型（用于保存多个女友互动记录）
+export interface Conversation {
+  id: string;
+  createdAt: number;
+  updatedAt: number;
+  gameState: GameState;
+}
+
 // 游戏状态
 export interface GameState {
   // 女友信息

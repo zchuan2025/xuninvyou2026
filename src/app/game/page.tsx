@@ -36,7 +36,8 @@ import {
   Message, 
   GIRLFRIEND_TYPES, 
   AFFECTION_LEVELS,
-  AffectionLevel 
+  AffectionLevel,
+  Conversation 
 } from '@/types';
 import { 
   calculateAffectionChange, 
@@ -59,11 +60,31 @@ export default function GamePage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 保存会话到列表的辅助函数
+  const saveConversation = (updatedState: GameState) => {
+    const conversationId = localStorage.getItem('currentConversationId');
+    if (conversationId) {
+      // 更新现有会话
+      const savedConversations = localStorage.getItem('conversations');
+      if (savedConversations) {
+        const conversations = JSON.parse(savedConversations) as Conversation[];
+        const index = conversations.findIndex(c => c.id === conversationId);
+        if (index !== -1) {
+          conversations[index].gameState = updatedState;
+          conversations[index].updatedAt = Date.now();
+          localStorage.setItem('conversations', JSON.stringify(conversations));
+        }
+      }
+    }
+    // 同时保存单个gameState以保持兼容性
+    localStorage.setItem('gameState', JSON.stringify(updatedState));
+  };
+
   // 加载游戏状态
   useEffect(() => {
     const savedState = localStorage.getItem('gameState');
     if (!savedState) {
-      router.push('/');
+      router.push('/conversations');
       return;
     }
     const state = JSON.parse(savedState) as GameState;
@@ -208,8 +229,7 @@ export default function GamePage() {
         nextPhotoTurn: nextPhotoTurn,
       };
 
-      setGameState(updatedState);
-      localStorage.setItem('gameState', JSON.stringify(updatedState));
+      saveConversation(updatedState);
 
       // 如果需要自动发送照片
       if (shouldAutoSendPhoto) {
@@ -279,8 +299,7 @@ export default function GamePage() {
           lastActiveTime: Date.now(),
         };
 
-        setGameState(updatedState);
-        localStorage.setItem('gameState', JSON.stringify(updatedState));
+        saveConversation(updatedState);
       }
     } catch (error) {
       console.error('Failed to auto send photo:', error);
@@ -402,8 +421,7 @@ export default function GamePage() {
           lastActiveTime: Date.now(),
         };
 
-        setGameState(updatedState);
-        localStorage.setItem('gameState', JSON.stringify(updatedState));
+        saveConversation(updatedState);
       } else {
         alert('照片生成失败，请稍后再试');
       }
@@ -445,7 +463,7 @@ export default function GamePage() {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/conversations')}
             className="text-white hover:bg-white/20"
           >
             <ArrowLeft className="w-5 h-5" />
