@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,7 +20,9 @@ import {
   Camera,
   Send,
   Moon,
-  Sun
+  Sun,
+  MoreHorizontal,
+  User
 } from 'lucide-react';
 import { 
   GameState, 
@@ -46,6 +47,7 @@ export default function GamePage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +61,6 @@ export default function GamePage() {
     const state = JSON.parse(savedState) as GameState;
     setGameState(state);
     
-    // 初始化消息
     if (state.messages.length === 0) {
       const initialMessage: Message = {
         id: 'initial',
@@ -91,7 +92,6 @@ export default function GamePage() {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
 
-    // 创建 AI 消息占位符
     const aiMessageId = `ai-${Date.now()}`;
     const aiMessage: Message = {
       id: aiMessageId,
@@ -102,7 +102,6 @@ export default function GamePage() {
     setMessages(prev => [...prev, aiMessage]);
 
     try {
-      // 调用后端 API
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -118,7 +117,6 @@ export default function GamePage() {
         throw new Error('Failed to send message');
       }
 
-      // 处理流式响应
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let accumulatedContent = '';
@@ -141,7 +139,6 @@ export default function GamePage() {
                 const parsed = JSON.parse(data);
                 if (parsed.content) {
                   accumulatedContent += parsed.content;
-                  // 实时更新消息内容
                   setMessages(prev => 
                     prev.map(msg => 
                       msg.id === aiMessageId 
@@ -158,8 +155,6 @@ export default function GamePage() {
         }
       }
 
-      // 更新游戏状态
-      // 计算好感度变化
       const isPositive = isPositiveInteraction(userMessage.content);
       const affectionChange = calculateAffectionChange(
         userMessage.content,
@@ -167,17 +162,11 @@ export default function GamePage() {
         isPositive
       );
       const newAffectionScore = Math.max(0, Math.min(100, gameState.affectionScore + affectionChange));
-      
-      // 更新好感度等级
       const newAffectionLevel = updateAffectionLevel(newAffectionScore);
-      
-      // 分析用户偏好
       const detectedPreference = analyzeUserPreference(userMessage.content);
       const newUserPreferences = detectedPreference 
         ? [...new Set([...gameState.userPreferences, detectedPreference])]
         : gameState.userPreferences;
-      
-      // 调整性格参数
       const newPersonality = adjustPersonalityByPreference(
         gameState.personality,
         newUserPreferences,
@@ -203,7 +192,6 @@ export default function GamePage() {
 
     } catch (error) {
       console.error('Failed to send message:', error);
-      // 更新消息为错误状态
       setMessages(prev => 
         prev.map(msg => 
           msg.id === aiMessageId 
@@ -227,7 +215,6 @@ export default function GamePage() {
     const message = messages.find(m => m.id === messageId);
     if (!message || message.role !== 'assistant') return;
 
-    // 如果正在播放，停止播放
     if (isPlaying) {
       const audio = document.getElementById('audio-player') as HTMLAudioElement;
       if (audio) {
@@ -239,7 +226,6 @@ export default function GamePage() {
     }
 
     try {
-      // 调用 TTS API
       const response = await fetch('/api/tts', {
         method: 'POST',
         headers: {
@@ -254,7 +240,6 @@ export default function GamePage() {
       const data = await response.json();
 
       if (data.success) {
-        // 播放音频
         const audio = new Audio(data.audioUri);
         audio.id = 'audio-player';
         
@@ -278,7 +263,6 @@ export default function GamePage() {
   const handleGeneratePhoto = async () => {
     if (!gameState || isGeneratingPhoto) return;
 
-    // 好感度检查
     if (gameState.affectionLevel === 'stranger' || gameState.affectionLevel === 'acquaintance') {
       alert('好感度还不够高，多聊聊天解锁照片功能吧！');
       return;
@@ -287,7 +271,6 @@ export default function GamePage() {
     setIsGeneratingPhoto(true);
 
     try {
-      // 根据好感度等级生成不同场景的提示词
       let scenePrompt = '';
       switch (gameState.affectionLevel) {
         case 'friend':
@@ -318,7 +301,6 @@ export default function GamePage() {
       const data = await response.json();
 
       if (data.success) {
-        // 添加照片到消息列表
         const photoMessage: Message = {
           id: `photo-${Date.now()}`,
           role: 'assistant',
@@ -328,7 +310,6 @@ export default function GamePage() {
 
         setMessages(prev => [...prev, photoMessage]);
 
-        // 更新游戏状态，添加解锁的照片
         const updatedState = {
           ...gameState,
           messages: [...gameState.messages, photoMessage],
@@ -351,10 +332,10 @@ export default function GamePage() {
 
   if (!gameState) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-100 to-purple-100 dark:from-pink-950/30 dark:via-rose-950/30 dark:to-purple-950/30">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">加载中...</p>
+          <p className="text-pink-700 dark:text-pink-300">加载中...</p>
         </div>
       </div>
     );
@@ -364,58 +345,185 @@ export default function GamePage() {
   const affectionLevel = AFFECTION_LEVELS[gameState.affectionLevel];
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
       isDarkMode 
         ? 'bg-gray-900 text-gray-100' 
-        : 'bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50'
+        : 'bg-gradient-to-br from-pink-100 via-rose-100 to-purple-100'
     }`}>
-      <div className="container mx-auto p-4 h-screen flex flex-col max-w-7xl">
-        {/* 顶部导航 */}
-        <div className="flex items-center justify-between mb-4">
+      {/* 微信风格顶部导航栏 */}
+      <div className={`flex items-center justify-between px-4 py-3 ${
+        isDarkMode 
+          ? 'bg-gray-800 border-b border-gray-700' 
+          : 'bg-gradient-to-r from-pink-500 to-rose-500'
+      }`}>
+        <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
+            size="icon"
             onClick={() => router.push('/')}
-            className="gap-2"
+            className="text-white hover:bg-white/20"
           >
-            <ArrowLeft className="w-4 h-4" />
-            返回
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Settings className="w-5 h-5" />
-            </Button>
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={gameState.girlfriendPhoto} alt={gameState.girlfriendName} />
+              <AvatarFallback className="bg-pink-200 text-pink-700">
+                {gameState.girlfriendName.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="font-semibold text-white">{gameState.girlfriendName}</h3>
+              <p className="text-xs text-white/80">{personality.name}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="text-white hover:bg-white/20"
+          >
+            <User className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="text-white hover:bg-white/20"
+          >
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* 主聊天区域 */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* 消息列表 - 微信风格 */}
+          <ScrollArea className="flex-1 px-4 py-4">
+            <div className="space-y-4 max-w-3xl mx-auto">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {message.role === 'assistant' && (
+                    <Avatar className="w-10 h-10 flex-shrink-0 mr-3">
+                      <AvatarImage src={gameState.girlfriendPhoto} />
+                      <AvatarFallback className="bg-pink-200 text-pink-700 text-sm">
+                        {gameState.girlfriendName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className={`max-w-[70%] ${message.role === 'user' ? 'flex flex-col items-end' : ''}`}>
+                    <div
+                      className={`px-4 py-3 shadow-sm ${
+                        message.role === 'user'
+                          ? 'bg-[#95EC69] text-black rounded-tr-sm'
+                          : message.role === 'system'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800 rounded-sm'
+                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm'
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(message.timestamp).toLocaleTimeString('zh-CN', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      {message.role === 'assistant' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 hover:bg-white/10"
+                          onClick={() => handleVoicePlay(message.id)}
+                        >
+                          <Volume2 className="w-3 h-3 text-gray-400" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {message.role === 'user' && (
+                    <Avatar className="w-10 h-10 flex-shrink-0 ml-3">
+                      <AvatarFallback className="bg-blue-500 text-white text-sm">
+                        <User className="w-5 h-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          {/* 输入区域 - 微信风格 */}
+          <div className={`p-3 border-t ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200'
+          }`}>
+            <div className="max-w-3xl mx-auto flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleGeneratePhoto}
+                disabled={isGeneratingPhoto}
+                className="flex-shrink-0"
+              >
+                <Camera className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </Button>
+              <Input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={`和 ${gameState.girlfriendName} 聊点什么...`}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim()}
+                className="flex-shrink-0 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* 主内容区 */}
-        <div className="flex-1 flex gap-4 overflow-hidden">
-          {/* 左侧：女友信息面板 */}
-          <Card className={`w-80 flex-shrink-0 ${
-            isDarkMode ? 'bg-gray-800 border-gray-700' : ''
-          }`}>
-            <CardHeader className="text-center pb-4">
-              <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-pink-300 dark:border-pink-700">
-                <AvatarImage src={gameState.girlfriendPhoto} alt={gameState.girlfriendName} />
-                <AvatarFallback className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 text-2xl">
-                  {gameState.girlfriendName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <CardTitle className="text-2xl">{gameState.girlfriendName}</CardTitle>
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <Badge variant="secondary">{gameState.girlfriendAge}岁</Badge>
-                <Badge className="bg-gradient-to-r from-pink-500 to-purple-500">
-                  {personality.name}
-                </Badge>
+        {/* 侧边栏 - 可折叠 */}
+        {showSidebar && (
+          <div className={`w-80 flex-shrink-0 border-l ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200'
+          } overflow-y-auto`}>
+            <div className="p-4 space-y-6">
+              {/* 女友信息 */}
+              <div className="text-center">
+                <Avatar className="w-24 h-24 mx-auto mb-3 border-4 border-pink-300 dark:border-pink-700">
+                  <AvatarImage src={gameState.girlfriendPhoto} alt={gameState.girlfriendName} />
+                  <AvatarFallback className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900 dark:to-purple-900 text-2xl">
+                    {gameState.girlfriendName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="text-xl font-semibold">{gameState.girlfriendName}</h3>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <Badge variant="secondary">{gameState.girlfriendAge}岁</Badge>
+                  <Badge className="bg-gradient-to-r from-pink-500 to-purple-500">
+                    {personality.name}
+                  </Badge>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
+
+              <Separator />
+
               {/* 好感度 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -485,110 +593,9 @@ export default function GamePage() {
                   <div className="text-xs text-muted-foreground">解锁照片</div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* 右侧：聊天区域 */}
-          <Card className={`flex-1 flex flex-col ${
-            isDarkMode ? 'bg-gray-800 border-gray-700' : ''
-          }`}>
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  聊天对话
-                </CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleGeneratePhoto}
-                  className="gap-2"
-                >
-                  <Camera className="w-4 h-4" />
-                  生成照片
-                </Button>
-              </div>
-            </CardHeader>
-
-            <CardContent className="flex-1 flex flex-col overflow-hidden p-4">
-              {/* 消息列表 */}
-              <ScrollArea className="flex-1 pr-4 mb-4">
-                <div ref={scrollRef} className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                          message.role === 'user'
-                            ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'
-                            : message.role === 'system'
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                        }`}
-                      >
-                        {message.role === 'assistant' && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={gameState.girlfriendPhoto} />
-                              <AvatarFallback className="text-xs">
-                                {gameState.girlfriendName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-semibold">
-                              {gameState.girlfriendName}
-                            </span>
-                          </div>
-                        )}
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                        <div className="flex items-center justify-between mt-2 gap-2">
-                          <span className="text-xs opacity-70">
-                            {new Date(message.timestamp).toLocaleTimeString('zh-CN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                          {message.role === 'assistant' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 hover:bg-white/10"
-                              onClick={() => handleVoicePlay(message.id)}
-                            >
-                              <Volume2 className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-
-              {/* 输入区域 */}
-              <div className="flex gap-2">
-                <Input
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={`和 ${gameState.girlfriendName} 聊点什么...`}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim()}
-                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

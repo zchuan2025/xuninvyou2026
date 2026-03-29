@@ -11,31 +11,37 @@ export const GIRLFRIEND_TYPES: Record<GirlfriendType, {
   name: string;
   description: string;
   personality: string[];
+  defaultNames: string[];
 }> = {
   gentle: {
     name: '温柔型',
     description: '体贴入微，善解人意，给人温暖的感觉',
-    personality: ['温柔体贴', '细心周到', '善解人意', '温暖治愈']
+    personality: ['温柔体贴', '细心周到', '善解人意', '温暖治愈'],
+    defaultNames: ['小柔', '婉儿', '雨萱', '婉婷', '若曦']
   },
   tsundere: {
     name: '傲娇型',
     description: '表面高傲，内心柔软，偶尔会展现出可爱的一面',
-    personality: ['口是心非', '可爱反差', '独立自信', '内心柔软']
+    personality: ['口是心非', '可爱反差', '独立自信', '内心柔软'],
+    defaultNames: ['小傲', '雪儿', '傲娇', '紫萱', '雨婷']
   },
   mature: {
     name: '御姐型',
     description: '成熟稳重，处事干练，给人一种可靠的感觉',
-    personality: ['成熟稳重', '知性优雅', '独立自信', '干练果断']
+    personality: ['成熟稳重', '知性优雅', '独立自信', '干练果断'],
+    defaultNames: ['雅琴', '若兰', '雅静', '婉柔', '知秋']
   },
   lively: {
     name: '活泼型',
     description: '热情开朗，充满活力，给人带来快乐',
-    personality: ['热情开朗', '活泼好动', '幽默风趣', '积极乐观']
+    personality: ['热情开朗', '活泼好动', '幽默风趣', '积极乐观'],
+    defaultNames: ['小乐', '欣欣', '悦悦', '开心', '俏俏']
   },
   mysterious: {
     name: '神秘型',
     description: '深邃内敛，充满神秘感，让人想要探索',
-    personality: ['深邃内敛', '神秘高冷', '智慧深沉', '独特魅力']
+    personality: ['深邃内敛', '神秘高冷', '智慧深沉', '独特魅力'],
+    defaultNames: ['幽兰', '梦瑶', '紫月', '清幽', '神秘']
   }
 };
 
