@@ -28,8 +28,7 @@ import {
   Moon,
   Sun,
   MoreHorizontal,
-  User,
-  History
+  User
 } from 'lucide-react';
 import { 
   GameState, 
@@ -56,7 +55,6 @@ export default function GamePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -208,7 +206,7 @@ export default function GamePage() {
       let shouldAutoSendPhoto = false;
       let nextPhotoTurn = gameState.nextPhotoTurn || 3;
       
-      if (newConversationTurns >= nextPhotoTurn && newAffectionLevel !== 'stranger' && newAffectionLevel !== 'acquaintance') {
+      if (newConversationTurns >= nextPhotoTurn && newAffectionLevel !== 'stranger') {
         shouldAutoSendPhoto = true;
         // 设置下一次发照片的时间（3-5轮后）
         nextPhotoTurn = newConversationTurns + Math.floor(Math.random() * 3) + 3;
@@ -367,8 +365,8 @@ export default function GamePage() {
   const handleGeneratePhoto = async () => {
     if (!gameState || isGeneratingPhoto) return;
 
-    if (gameState.affectionLevel === 'stranger' || gameState.affectionLevel === 'acquaintance') {
-      alert('好感度还不够高，多聊聊天解锁照片功能吧！\n\n当前好感度: ' + gameState.affectionScore + '\n需要达到朋友等级（好感度≥40）才能生成照片。');
+    if (gameState.affectionLevel === 'stranger') {
+      alert('好感度还不够高，多聊聊天解锁照片功能吧！\n\n当前好感度: ' + gameState.affectionScore + '\n需要达到熟人等级（好感度≥20）才能生成照片。');
       return;
     }
 
@@ -488,15 +486,6 @@ export default function GamePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowHistory(true)}
-            className="text-white hover:bg-white/20"
-            title="查看历史记录"
-          >
-            <History className="w-5 h-5" />
-          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -784,7 +773,7 @@ export default function GamePage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>
-                    <span>达到"朋友"等级(好感度≥40)可手动点击相机按钮生成</span>
+                    <span>达到"熟人"等级(好感度≥20)可手动点击相机按钮生成</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>
@@ -828,105 +817,6 @@ export default function GamePage() {
           </div>
         )}
       </div>
-
-      {/* 历史记录对话框 */}
-      <Dialog open={showHistory} onOpenChange={setShowHistory}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <History className="w-5 h-5 text-pink-500" />
-              聊天历史记录
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="h-[60vh] pr-4">
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {message.role === 'assistant' && (
-                    <Avatar className="w-8 h-8 flex-shrink-0 mr-2">
-                      <AvatarImage src={gameState?.girlfriendPhoto} />
-                      <AvatarFallback className="bg-pink-200 text-pink-700 text-xs">
-                        {gameState?.girlfriendName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div className={`max-w-[80%] ${message.role === 'user' ? 'flex flex-col items-end' : ''}`}>
-                    <div
-                      className={`px-3 py-2 shadow-sm ${
-                        message.role === 'user'
-                          ? 'bg-[#95EC69] text-black rounded-tr-sm'
-                          : message.role === 'system'
-                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800 rounded-sm'
-                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm'
-                      }`}
-                    >
-                      {/* 消息内容渲染 */}
-                      {message.role === 'assistant' && message.content.includes('![') ? (
-                        // 检测是否包含图片Markdown并渲染
-                        <div className="text-sm leading-relaxed">
-                          {(() => {
-                            const parts = message.content.split(/!\[([^\]]*)\]\(([^)]+)\)/g);
-                            return parts.map((part, index) => {
-                              if (index % 3 === 1) {
-                                // 图片alt文本
-                                return null;
-                              } else if (index % 3 === 2) {
-                                // 图片URL
-                                return (
-                                  <div key={index} className="mt-2 mb-2">
-                                    <img 
-                                      src={part} 
-                                      alt="私密照片" 
-                                      className="max-w-full rounded-lg shadow-md"
-                                      loading="lazy"
-                                    />
-                                  </div>
-                                );
-                              } else if (part) {
-                                // 普通文本
-                                return (
-                                  <p key={index} className="whitespace-pre-wrap">
-                                    {part}
-                                  </p>
-                                );
-                              }
-                              return null;
-                            });
-                          })()}
-                        </div>
-                      ) : (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(message.timestamp).toLocaleString('zh-CN', {
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  {message.role === 'user' && (
-                    <Avatar className="w-8 h-8 flex-shrink-0 ml-2">
-                      <AvatarFallback className="bg-blue-500 text-white text-xs">
-                        <User className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
