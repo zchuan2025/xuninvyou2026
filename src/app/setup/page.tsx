@@ -19,7 +19,8 @@ import {
   Upload, 
   Camera,
   Check,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { 
   GirlfriendType, 
@@ -145,7 +146,15 @@ export default function SetupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-100 to-purple-100 dark:from-pink-950/30 dark:via-rose-950/30 dark:to-purple-950/30 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl shadow-2xl border-pink-200 dark:border-pink-800">
-        <CardHeader className="text-center pb-6 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 rounded-t-lg">
+        <CardHeader className="relative text-center pb-6 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 rounded-t-lg">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push('/')}
+            className="absolute left-4 top-4 text-white hover:bg-white/20"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <div className="flex items-center justify-center gap-2 mb-2">
             <Heart className="w-8 h-8 text-white fill-white animate-pulse" />
             <CardTitle className="text-3xl font-bold text-white">

@@ -84,7 +84,7 @@ export default function GamePage() {
   useEffect(() => {
     const savedState = localStorage.getItem('gameState');
     if (!savedState) {
-      router.push('/conversations');
+      router.push('/');
       return;
     }
     const state = JSON.parse(savedState) as GameState;
@@ -463,7 +463,7 @@ export default function GamePage() {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => router.push('/conversations')}
+            onClick={() => router.push('/')}
             className="text-white hover:bg-white/20"
           >
             <ArrowLeft className="w-5 h-5" />
