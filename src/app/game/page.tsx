@@ -264,7 +264,7 @@ export default function GamePage() {
     if (!gameState || isGeneratingPhoto) return;
 
     if (gameState.affectionLevel === 'stranger' || gameState.affectionLevel === 'acquaintance') {
-      alert('好感度还不够高，多聊聊天解锁照片功能吧！');
+      alert('好感度还不够高，多聊聊天解锁照片功能吧！\n\n当前好感度: ' + gameState.affectionScore + '\n需要达到朋友等级（好感度≥40）才能生成照片。');
       return;
     }
 
@@ -533,8 +533,17 @@ export default function GamePage() {
                   </div>
                   <Badge variant="outline">{affectionLevel.name}</Badge>
                 </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-2xl font-bold ${
+                    gameState.affectionScore >= 60 ? 'text-pink-500' :
+                    gameState.affectionScore >= 0 ? 'text-blue-500' : 'text-red-500'
+                  }`}>
+                    {gameState.affectionScore}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ 100</span>
+                </div>
                 <Progress 
-                  value={gameState.affectionScore} 
+                  value={((gameState.affectionScore + 20) / 120) * 100}
                   className="h-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -591,6 +600,66 @@ export default function GamePage() {
                     {gameState.unlockedPhotos.length}
                   </div>
                   <div className="text-xs text-muted-foreground">解锁照片</div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 照片解锁说明 */}
+              <div className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/20 dark:to-purple-950/20 p-4 rounded-lg">
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                  <ImageIcon className="w-4 h-4 text-purple-500" />
+                  如何解锁照片
+                </h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-pink-500">•</span>
+                    <span>初始赠送2张照片</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-pink-500">•</span>
+                    <span>达到"朋友"等级(好感度≥40)可点击相机按钮生成</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-pink-500">•</span>
+                    <span>好感度越高，照片越亲密浪漫</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-pink-500">•</span>
+                    <span>每次对话都有机会提升好感度</span>
+                  </li>
+                </ul>
+              </div>
+
+              <Separator />
+
+              {/* 最近对话摘要 */}
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                  <MessageSquare className="w-4 h-4 text-blue-500" />
+                  最近对话
+                </h4>
+                <div className="space-y-2">
+                  {messages.slice(-3).reverse().filter(m => m.role !== 'system').map((msg) => (
+                    <div key={msg.id} className={`p-2 rounded text-xs ${
+                      msg.role === 'user' 
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-right' 
+                        : 'bg-pink-50 dark:bg-pink-900/20'
+                    }`}>
+                      <div className="font-semibold mb-1">
+                        {msg.role === 'user' ? '我' : gameState.girlfriendName}
+                      </div>
+                      <div className="text-muted-foreground line-clamp-2">
+                        {msg.content}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {new Date(msg.timestamp).toLocaleTimeString('zh-CN', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

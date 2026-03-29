@@ -39,8 +39,8 @@ export function calculateAffectionChange(
     change += 0.3;
   }
 
-  // 好感度上限保护
-  const newAffection = Math.min(100, Math.max(0, currentAffection + change));
+  // 好感度范围保护 (-20 到 100)
+  const newAffection = Math.min(100, Math.max(-20, currentAffection + change));
   
   return newAffection - currentAffection;
 }
@@ -51,6 +51,7 @@ export function calculateAffectionChange(
 export function updateAffectionLevel(
   affectionScore: number
 ): AffectionLevel {
+  if (affectionScore < 0) return 'enemy';
   if (affectionScore < 20) return 'stranger';
   if (affectionScore < 40) return 'acquaintance';
   if (affectionScore < 60) return 'friend';
@@ -177,12 +178,12 @@ export function shouldGeneratePhoto(
   affectionLevel: AffectionLevel,
   lastGeneratedPhotoTime?: number
 ): boolean {
-  // 好感度不足时不生成
+  // 好感度不足时不生成（熟人以上才能生成）
   if (affectionLevel === 'stranger' || affectionLevel === 'acquaintance') {
     return false;
   }
 
-  const photoKeywords = ['照片', '看看', '想见你', '想看', '样子', '样子', '现在的'];
+  const photoKeywords = ['照片', '看看', '想见你', '想看', '样子', '现在的'];
   const lowerMessage = message.toLowerCase();
   
   const hasKeyword = photoKeywords.some(keyword => lowerMessage.includes(keyword));

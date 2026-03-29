@@ -119,6 +119,7 @@ export const STORY_LINES: StoryLine[] = [
 
 // 好感度等级
 export type AffectionLevel = 
+  | 'enemy'       // 敌对 (-20-0)
   | 'stranger'    // 陌生人 (0-20)
   | 'acquaintance' // 熟人 (20-40)
   | 'friend'      // 朋友 (40-60)
@@ -126,6 +127,7 @@ export type AffectionLevel =
   | 'lover';      // 恋人 (80-100)
 
 export const AFFECTION_LEVELS: Record<AffectionLevel, { min: number; max: number; name: string; description: string }> = {
+  enemy: { min: -20, max: 0, name: '敌对', description: '关系紧张，需要好好沟通' },
   stranger: { min: 0, max: 20, name: '陌生人', description: '刚认识不久，关系还很疏远' },
   acquaintance: { min: 20, max: 40, name: '熟人', description: '开始熟悉，但还没有太多交集' },
   friend: { min: 40, max: 60, name: '朋友', description: '可以正常交流，分享日常' },
@@ -214,7 +216,7 @@ export const createInitialGameState = (): Omit<GameState, 'girlfriendType' | 'gi
   messages: [],
   conversationTurns: 0,
   lastActiveTime: Date.now(),
-  unlockedPhotos: [],
+  unlockedPhotos: ['initial-1', 'initial-2'], // 初始解锁2张照片
   isGameStarted: false
 });
 
