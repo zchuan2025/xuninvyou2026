@@ -150,7 +150,7 @@ export default function SetupPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/conversations')}
             className="absolute left-4 top-4 text-white hover:bg-white/20"
           >
             <ArrowLeft className="w-5 h-5" />
