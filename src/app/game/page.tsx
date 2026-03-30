@@ -202,11 +202,11 @@ export default function GamePage() {
 
       const newConversationTurns = gameState.conversationTurns + 1;
       
-      // 检查是否需要自动发送照片
+      // 检查是否需要自动发送照片（从第3轮开始，每3-5轮发送一次）
       let shouldAutoSendPhoto = false;
       let nextPhotoTurn = gameState.nextPhotoTurn || 3;
       
-      if (newConversationTurns >= nextPhotoTurn && newAffectionLevel !== 'stranger') {
+      if (newConversationTurns >= nextPhotoTurn) {
         shouldAutoSendPhoto = true;
         // 设置下一次发照片的时间（3-5轮后）
         nextPhotoTurn = newConversationTurns + Math.floor(Math.random() * 3) + 3;
@@ -224,9 +224,10 @@ export default function GamePage() {
         affectionLevel: newAffectionLevel,
         personality: newPersonality,
         userPreferences: newUserPreferences,
-        nextPhotoTurn: nextPhotoTurn,
+        nextPhotoTurn: shouldAutoSendPhoto ? nextPhotoTurn : gameState.nextPhotoTurn,
       };
 
+      setGameState(updatedState);
       saveConversation(updatedState);
 
       // 如果需要自动发送照片
@@ -297,6 +298,7 @@ export default function GamePage() {
           lastActiveTime: Date.now(),
         };
 
+        setGameState(updatedState);
         saveConversation(updatedState);
       }
     } catch (error) {
@@ -365,11 +367,7 @@ export default function GamePage() {
   const handleGeneratePhoto = async () => {
     if (!gameState || isGeneratingPhoto) return;
 
-    if (gameState.affectionLevel === 'stranger') {
-      alert('好感度还不够高，多聊聊天解锁照片功能吧！\n\n当前好感度: ' + gameState.affectionScore + '\n需要达到熟人等级（好感度≥20）才能生成照片。');
-      return;
-    }
-
+    // 完全移除好感度限制，任何好感度都可以生成照片
     setIsGeneratingPhoto(true);
 
     try {
@@ -419,6 +417,7 @@ export default function GamePage() {
           lastActiveTime: Date.now(),
         };
 
+        setGameState(updatedState);
         saveConversation(updatedState);
       } else {
         alert('照片生成失败，请稍后再试');
@@ -773,7 +772,7 @@ export default function GamePage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>
-                    <span>达到"熟人"等级(好感度≥20)可手动点击相机按钮生成</span>
+                    <span>随时可以点击相机按钮生成照片</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-500">•</span>

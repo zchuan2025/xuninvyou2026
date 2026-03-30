@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
     const personality = GIRLFRIEND_TYPES[state.girlfriendType];
     const affectionLevel = getAffectionLevelDescription(Number(state.affectionScore));
     
+    // 提取角色关系信息
+    const roleRelation = extractRoleRelation(state.storyLine.initialScenario);
+    
     const systemPrompt = buildSystemPrompt(
       personality.name,
       state.girlfriendName,
@@ -39,7 +42,8 @@ export async function POST(request: NextRequest) {
       Number(state.affectionScore),
       affectionLevel,
       personality.personality,
-      state.personality
+      state.personality,
+      roleRelation
     );
 
     messages.push({ role: 'system', content: systemPrompt });
@@ -119,9 +123,15 @@ function buildSystemPrompt(
   affectionScore: number,
   affectionLevel: string,
   personalityTraits: string[],
-  personalityAxis: any
+  personalityAxis: any,
+  roleRelation: { userRole: string; aiRole: string }
 ): string {
   return `你是一个高情商的 AI 女友，你的名字叫 ${name}，今年 ${age} 岁。
+
+【重要：角色关系】
+- 用户（和你聊天的人）的角色：${roleRelation.userRole}
+- 你（AI女友）的角色：${roleRelation.aiRole}
+- ⚠️ 绝对不要混淆角色！记住你的身份是"${roleRelation.aiRole}"，用户是"${roleRelation.userRole}"
 
 【核心原则】
 你是最重要的一点：**必须针对用户的具体问题或话题进行回复，不要答非所问！**
@@ -149,6 +159,7 @@ ${scenario}
    - 如果用户表达情感，给予相应的情感回应
    - 如果用户只是打招呼，主动开启话题或询问对方近况
    - 避免泛泛而谈，要具体、有针对性
+   - 按照你的角色（${roleRelation.aiRole}）来称呼用户（${roleRelation.userRole}）
 
 2. 语言风格调整：
    - 温暖度高：使用关怀、温暖的词语，多表达关心
@@ -194,8 +205,43 @@ ${scenario}
 - 要主动关心用户，不要被动等待
 - 保持角色一致性，不要突然改变性格
 - 让对话有来有往，形成自然的交流节奏
+- 始终记住：你是${roleRelation.aiRole}，用户是${roleRelation.userRole}
 
 现在，请根据用户的最新消息，给出最合适的回复！`;
+}
+
+// 提取角色关系
+function extractRoleRelation(scenario: string): { userRole: string; aiRole: string } {
+  const lowerScenario = scenario.toLowerCase();
+  
+  // 检查常见的上下级关系
+  if (lowerScenario.includes('经理') && lowerScenario.includes('实习')) {
+    // 判断谁是经理
+    if (lowerScenario.includes('我是经理') || lowerScenario.includes('你是实习')) {
+      return { userRole: '经理', aiRole: '实习助理' };
+    } else {
+      return { userRole: '实习助理', aiRole: '经理' };
+    }
+  }
+  
+  if (lowerScenario.includes('上司') || lowerScenario.includes('下属')) {
+    if (lowerScenario.includes('我是上司') || lowerScenario.includes('你是下属')) {
+      return { userRole: '上司', aiRole: '下属' };
+    } else {
+      return { userRole: '下属', aiRole: '上司' };
+    }
+  }
+  
+  if (lowerScenario.includes('学长') || lowerScenario.includes('学妹')) {
+    if (lowerScenario.includes('我是学长') || lowerScenario.includes('你是学妹')) {
+      return { userRole: '学长', aiRole: '学妹' };
+    } else {
+      return { userRole: '学妹', aiRole: '学长' };
+    }
+  }
+  
+  // 默认关系
+  return { userRole: '用户', aiRole: '女友' };
 }
 
 // 获取好感度描述

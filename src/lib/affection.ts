@@ -11,32 +11,32 @@ export function calculateAffectionChange(
 ): number {
   let change = 0;
 
-  // 基础好感度变化
+  // 基础好感度变化（提高基础加分）
   if (isPositiveInteraction) {
-    change += 0.5; // 每次正常互动增加 0.5
+    change += 2; // 每次正常互动增加 2（原来是0.5）
   }
 
   // 情绪关键词加分
-  const positiveKeywords = ['喜欢', '爱', '开心', '幸福', '快乐', '美好', '想念', '想见', '关心'];
-  const negativeKeywords = ['讨厌', '生气', '难过', '痛苦', '离开', '讨厌你'];
+  const positiveKeywords = ['喜欢', '爱', '开心', '幸福', '快乐', '美好', '想念', '想见', '关心', '你好', '在吗', '哈喽', '嗨', '早上好', '晚上好', '下午好'];
+  const negativeKeywords = ['讨厌', '生气', '难过', '痛苦', '离开', '讨厌你', '滚', '闭嘴', '走开', '别烦我'];
 
   const lowerMessage = message.toLowerCase();
   
   positiveKeywords.forEach(keyword => {
     if (lowerMessage.includes(keyword)) {
-      change += 1;
+      change += 1.5; // 提高关键词加分
     }
   });
 
   negativeKeywords.forEach(keyword => {
     if (lowerMessage.includes(keyword)) {
-      change -= 2;
+      change -= 3; // 提高负面关键词扣分
     }
   });
 
   // 消息长度影响（长消息表示更投入）
   if (message.length > 50) {
-    change += 0.3;
+    change += 0.5;
   }
 
   // 好感度范围保护 (-20 到 100)
