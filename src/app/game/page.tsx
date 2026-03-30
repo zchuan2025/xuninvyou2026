@@ -119,6 +119,10 @@ export default function GamePage() {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
 
+    // 检测用户是否主动要求发照片
+    const photoRequestKeywords = ['照片', '看看', '自拍', '图片', 'picture', 'photo', '看看你', '见见你', '见见', '给我看'];
+    const isRequestingPhoto = photoRequestKeywords.some(keyword => userMessage.content.includes(keyword));
+
     const aiMessageId = `ai-${Date.now()}`;
     const aiMessage: Message = {
       id: aiMessageId,
@@ -237,6 +241,13 @@ export default function GamePage() {
         }, 1000);
       }
 
+      // 如果用户主动要求发照片，延迟生成照片
+      if (isRequestingPhoto) {
+        setTimeout(() => {
+          handleGeneratePhoto();
+        }, 500);
+      }
+
     } catch (error) {
       console.error('Failed to send message:', error);
       setMessages(prev => 
@@ -252,19 +263,78 @@ export default function GamePage() {
   const handleAutoSendPhoto = async (currentState: GameState) => {
     try {
       // 根据好感度等级生成不同场景的自拍或生活照
+      // 使用多样化的描述增加照片差异性
+      const scenes = [
+        'at home in cozy bedroom',
+        'in sunny outdoor cafe',
+        'near large window with natural light',
+        'in comfortable living room',
+        'in stylish cafe with warm lighting',
+        'in park during golden hour',
+        'at home near window with soft light',
+        'in modern cafe interior',
+        'in cozy apartment with plants',
+        'in bright home studio'
+      ];
+
+      const outfits = [
+        'wearing cute casual outfit',
+        'wearing elegant summer dress',
+        'wearing comfortable hoodie',
+        'wearing stylish blouse',
+        'wearing cute t-shirt and jeans',
+        'wearing flowy dress',
+        'wearing cozy sweater',
+        'wearing fashionable top',
+        'wearing casual business attire',
+        'wearing relaxed home clothes'
+      ];
+
+      const expressions = [
+        'with natural gentle smile',
+        'with playful expression',
+        'with soft loving gaze',
+        'with bright cheerful smile',
+        'with shy tender smile',
+        'with confident elegant look',
+        'with warm affectionate eyes',
+        'with sweet innocent smile',
+        'with relaxed peaceful expression',
+        'with engaging direct look'
+      ];
+
+      const angles = [
+        'straight-on selfie view',
+        'slight profile angle',
+        'three-quarter angle',
+        'natural candid capture',
+        'close-up intimate shot',
+        'medium shot showing shoulders',
+        'full body pose',
+        'casual tilted head pose',
+        'relaxed natural stance',
+        'dynamic lively pose'
+      ];
+
+      // 随机选择元素
+      const randomScene = scenes[Math.floor(Math.random() * scenes.length)];
+      const randomOutfit = outfits[Math.floor(Math.random() * outfits.length)];
+      const randomExpression = expressions[Math.floor(Math.random() * expressions.length)];
+      const randomAngle = angles[Math.floor(Math.random() * angles.length)];
+
       let scenePrompt = '';
       switch (currentState.affectionLevel) {
         case 'friend':
-          scenePrompt = 'casual selfie photo, taking photo of herself, smiling naturally, daily life scene, natural lighting, holding phone selfie style';
+          scenePrompt = `friendly casual photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, natural lighting, daily life moment`;
           break;
         case 'close':
-          scenePrompt = 'intimate daily life photo, cozy indoor setting, candid moment, soft natural light, relaxed pose, warm atmosphere';
+          scenePrompt = `intimate candid photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, soft warm lighting, relaxed atmosphere`;
           break;
         case 'lover':
-          scenePrompt = 'romantic selfie, loving gaze, gentle smile, intimate moment, warm lighting, natural beauty, wearing comfortable casual clothes';
+          scenePrompt = `romantic affectionate photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, beautiful lighting, loving atmosphere`;
           break;
         default:
-          scenePrompt = 'simple daily life photo, natural standing pose, smiling, bright natural lighting, casual everyday setting';
+          scenePrompt = `simple natural photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, bright natural lighting, casual everyday moment`;
       }
 
       const response = await fetch('/api/generate-photo', {
@@ -371,19 +441,78 @@ export default function GamePage() {
     setIsGeneratingPhoto(true);
 
     try {
+      // 生成多样化的场景描述
+      const scenes = [
+        'at home in cozy bedroom',
+        'in sunny outdoor cafe',
+        'near large window with natural light',
+        'in comfortable living room',
+        'in stylish cafe with warm lighting',
+        'in park during golden hour',
+        'at home near window with soft light',
+        'in modern cafe interior',
+        'in cozy apartment with plants',
+        'in bright home studio'
+      ];
+
+      const outfits = [
+        'wearing cute casual outfit',
+        'wearing elegant summer dress',
+        'wearing comfortable hoodie',
+        'wearing stylish blouse',
+        'wearing cute t-shirt and jeans',
+        'wearing flowy dress',
+        'wearing cozy sweater',
+        'wearing fashionable top',
+        'wearing casual business attire',
+        'wearing relaxed home clothes'
+      ];
+
+      const expressions = [
+        'with natural gentle smile',
+        'with playful expression',
+        'with soft loving gaze',
+        'with bright cheerful smile',
+        'with shy tender smile',
+        'with confident elegant look',
+        'with warm affectionate eyes',
+        'with sweet innocent smile',
+        'with relaxed peaceful expression',
+        'with engaging direct look'
+      ];
+
+      const angles = [
+        'straight-on selfie view',
+        'slight profile angle',
+        'three-quarter angle',
+        'natural candid capture',
+        'close-up intimate shot',
+        'medium shot showing shoulders',
+        'full body pose',
+        'casual tilted head pose',
+        'relaxed natural stance',
+        'dynamic lively pose'
+      ];
+
+      // 随机选择元素
+      const randomScene = scenes[Math.floor(Math.random() * scenes.length)];
+      const randomOutfit = outfits[Math.floor(Math.random() * outfits.length)];
+      const randomExpression = expressions[Math.floor(Math.random() * expressions.length)];
+      const randomAngle = angles[Math.floor(Math.random() * angles.length)];
+
       let scenePrompt = '';
       switch (gameState.affectionLevel) {
         case 'friend':
-          scenePrompt = 'casual selfie photo, taking photo of herself, smiling naturally, daily life scene, natural lighting, holding phone selfie style';
+          scenePrompt = `friendly casual photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, natural lighting, daily life moment`;
           break;
         case 'close':
-          scenePrompt = 'intimate daily life photo, cozy indoor setting, candid moment, soft natural light, relaxed pose, warm atmosphere';
+          scenePrompt = `intimate candid photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, soft warm lighting, relaxed atmosphere`;
           break;
         case 'lover':
-          scenePrompt = 'romantic selfie, loving gaze, gentle smile, intimate moment, warm lighting, natural beauty, wearing comfortable casual clothes';
+          scenePrompt = `romantic affectionate photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, beautiful lighting, loving atmosphere`;
           break;
         default:
-          scenePrompt = 'simple daily life photo, natural standing pose, smiling, bright natural lighting, casual everyday setting';
+          scenePrompt = `simple natural photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, bright natural lighting, casual everyday moment`;
       }
 
       const response = await fetch('/api/generate-photo', {

@@ -214,30 +214,31 @@ ${scenario}
 function extractRoleRelation(scenario: string): { userRole: string; aiRole: string } {
   const lowerScenario = scenario.toLowerCase();
   
+  // 职场故事线：用户是经理，AI女友是实习助理
+  if (lowerScenario.includes('你是部门经理') || 
+      (lowerScenario.includes('她是新来的实习生') && lowerScenario.includes('你是经理'))) {
+    return { userRole: '经理', aiRole: '实习助理' };
+  }
+  
+  // 检查实习助理向经理打招呼的场景
+  if (lowerScenario.includes('经理好，我是新来的实习生')) {
+    return { userRole: '经理', aiRole: '实习助理' };
+  }
+  
   // 检查常见的上下级关系
   if (lowerScenario.includes('经理') && lowerScenario.includes('实习')) {
-    // 判断谁是经理
-    if (lowerScenario.includes('我是经理') || lowerScenario.includes('你是实习')) {
-      return { userRole: '经理', aiRole: '实习助理' };
-    } else {
-      return { userRole: '实习助理', aiRole: '经理' };
-    }
+    // 默认用户是经理，AI女友是实习助理
+    return { userRole: '经理', aiRole: '实习助理' };
   }
   
   if (lowerScenario.includes('上司') || lowerScenario.includes('下属')) {
-    if (lowerScenario.includes('我是上司') || lowerScenario.includes('你是下属')) {
-      return { userRole: '上司', aiRole: '下属' };
-    } else {
-      return { userRole: '下属', aiRole: '上司' };
-    }
+    // 默认用户是上司，AI女友是下属
+    return { userRole: '上司', aiRole: '下属' };
   }
   
   if (lowerScenario.includes('学长') || lowerScenario.includes('学妹')) {
-    if (lowerScenario.includes('我是学长') || lowerScenario.includes('你是学妹')) {
-      return { userRole: '学长', aiRole: '学妹' };
-    } else {
-      return { userRole: '学妹', aiRole: '学长' };
-    }
+    // 默认用户是学长，AI女友是学妹
+    return { userRole: '学长', aiRole: '学妹' };
   }
   
   // 默认关系
