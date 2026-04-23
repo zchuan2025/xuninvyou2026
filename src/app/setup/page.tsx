@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { GlowingEffect } from '@/components/ui/glowing-effect';
 import { 
   Heart, 
   MessageCircle, 
@@ -30,6 +31,247 @@ import {
   GameState, 
   createInitialGameState 
 } from '@/types';
+
+const TYPE_CARD_STYLES: Record<
+  GirlfriendType,
+  {
+    gradient: string;
+    spotlight: string;
+    aura: string;
+    chip: string;
+    badge: string;
+  }
+> = {
+  gentle: {
+    gradient:
+      'from-rose-200/70 via-white/45 to-fuchsia-200/65 dark:from-rose-400/20 dark:via-white/5 dark:to-fuchsia-400/20',
+    spotlight: 'rgba(251, 113, 133, 0.18)',
+    aura: 'bg-rose-300/35 dark:bg-rose-400/20',
+    chip: 'bg-rose-100/90 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+    badge: 'bg-rose-500/12 text-rose-700 dark:text-rose-200',
+  },
+  tsundere: {
+    gradient:
+      'from-orange-200/70 via-white/35 to-pink-200/70 dark:from-orange-400/20 dark:via-white/5 dark:to-pink-400/20',
+    spotlight: 'rgba(251, 146, 60, 0.18)',
+    aura: 'bg-orange-300/35 dark:bg-orange-400/20',
+    chip: 'bg-orange-100/90 text-orange-700 dark:bg-orange-950/60 dark:text-orange-200',
+    badge: 'bg-orange-500/12 text-orange-700 dark:text-orange-200',
+  },
+  mature: {
+    gradient:
+      'from-violet-200/70 via-white/30 to-indigo-200/70 dark:from-violet-400/22 dark:via-white/5 dark:to-indigo-400/22',
+    spotlight: 'rgba(167, 139, 250, 0.2)',
+    aura: 'bg-violet-300/35 dark:bg-violet-400/20',
+    chip: 'bg-violet-100/90 text-violet-700 dark:bg-violet-950/60 dark:text-violet-200',
+    badge: 'bg-violet-500/12 text-violet-700 dark:text-violet-200',
+  },
+  lively: {
+    gradient:
+      'from-amber-200/75 via-white/35 to-yellow-200/70 dark:from-amber-400/22 dark:via-white/5 dark:to-yellow-400/20',
+    spotlight: 'rgba(250, 204, 21, 0.18)',
+    aura: 'bg-amber-300/35 dark:bg-amber-400/20',
+    chip: 'bg-amber-100/90 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+    badge: 'bg-amber-500/12 text-amber-700 dark:text-amber-200',
+  },
+  mysterious: {
+    gradient:
+      'from-cyan-200/65 via-white/30 to-fuchsia-200/70 dark:from-cyan-400/18 dark:via-white/5 dark:to-fuchsia-400/18',
+    spotlight: 'rgba(34, 211, 238, 0.18)',
+    aura: 'bg-cyan-300/30 dark:bg-cyan-400/18',
+    chip: 'bg-cyan-100/90 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-200',
+    badge: 'bg-cyan-500/12 text-cyan-700 dark:text-cyan-200',
+  },
+};
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    };
+
+    updatePreference();
+    mediaQuery.addEventListener('change', updatePreference);
+
+    return () => {
+      mediaQuery.removeEventListener('change', updatePreference);
+    };
+  }, []);
+
+  return prefersReducedMotion;
+}
+
+function GirlfriendTypeCard({
+  type,
+  selected,
+  typeData,
+}: {
+  type: GirlfriendType;
+  selected: boolean;
+  typeData: (typeof GIRLFRIEND_TYPES)[GirlfriendType];
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [tilt, setTilt] = useState({
+    rotateX: 0,
+    rotateY: 0,
+    spotlightX: 50,
+    spotlightY: 50,
+  });
+  const shouldReduceMotion = usePrefersReducedMotion();
+  const cardStyle = TYPE_CARD_STYLES[type];
+
+  const handleMouseMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (shouldReduceMotion) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const x = (event.clientX - rect.left - width / 2) / (width / 2);
+    const y = (event.clientY - rect.top - height / 2) / (height / 2);
+
+    setTilt({
+      rotateX: Number((-y * 5).toFixed(2)),
+      rotateY: Number((x * 5).toFixed(2)),
+      spotlightX: Math.round(((event.clientX - rect.left) / width) * 100),
+      spotlightY: Math.round(((event.clientY - rect.top) / height) * 100),
+    });
+  };
+
+  const resetTilt = () => {
+    setTilt({
+      rotateX: 0,
+      rotateY: 0,
+      spotlightX: 50,
+      spotlightY: 50,
+    });
+    setIsHovered(false);
+  };
+
+  const transformStyle: CSSProperties = shouldReduceMotion
+    ? {}
+    : {
+        transform: `perspective(1100px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) translateY(${
+          selected || isHovered ? -6 : 0
+        }px) scale(${selected ? 1.015 : isHovered ? 1.005 : 1})`,
+        transformStyle: 'preserve-3d',
+        transition: isHovered
+          ? 'transform 120ms linear'
+          : 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1)',
+      };
+
+  return (
+    <div style={{ perspective: '1100px' }}>
+      <div
+        className="group relative"
+        style={transformStyle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={resetTilt}
+        onMouseMove={handleMouseMove}
+      >
+        <div
+          className={`relative overflow-hidden rounded-3xl border transition-all duration-500 ${
+            selected
+              ? 'border-pink-400/80 bg-white/95 shadow-[0_18px_45px_-20px_rgba(244,114,182,0.65)] dark:border-pink-500/60 dark:bg-gray-950/85'
+              : 'border-pink-200/80 bg-white/85 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.28)] dark:border-pink-900/70 dark:bg-gray-950/65'
+          }`}
+        >
+          <div
+            className={`absolute inset-0 bg-gradient-to-br ${cardStyle.gradient} transition-opacity duration-500 ${
+              selected || isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+          />
+          <div
+            className={`absolute -right-10 -top-10 h-28 w-28 rounded-full blur-3xl transition-opacity duration-500 ${
+              cardStyle.aura
+            } ${selected || isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+          />
+          <div
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(circle at ${tilt.spotlightX}% ${tilt.spotlightY}%, ${cardStyle.spotlight}, transparent 42%)`,
+              opacity: shouldReduceMotion ? 0.18 : selected || isHovered ? 1 : 0,
+            }}
+          />
+          <GlowingEffect
+            blur={0}
+            borderWidth={selected ? 2 : 1}
+            className={selected ? 'opacity-100' : 'opacity-80'}
+            disabled={false}
+            inactiveZone={0.18}
+            movementDuration={0.7}
+            proximity={92}
+            spread={34}
+          />
+
+          <div
+            className={`absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300 ${
+              selected
+                ? 'border-pink-400/80 bg-pink-500 text-white shadow-lg shadow-pink-500/30'
+                : 'border-white/60 bg-white/55 text-pink-500 opacity-0 backdrop-blur-md group-hover:opacity-100 dark:border-white/10 dark:bg-white/5'
+            }`}
+          >
+            {selected ? <Check className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+          </div>
+
+          <RadioGroupItem value={type} id={type} className="sr-only" />
+
+          <Label htmlFor={type} className="relative z-10 block cursor-pointer p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <div
+                  className={`mb-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] backdrop-blur-sm ${cardStyle.badge}`}
+                >
+                  Romance Persona
+                </div>
+                <h4
+                  className={`text-lg font-semibold tracking-tight transition-transform duration-300 ${
+                    selected || isHovered ? 'translate-x-0.5' : ''
+                  } text-pink-700 dark:text-pink-200`}
+                >
+                  {typeData.name}
+                </h4>
+              </div>
+            </div>
+
+            <p className="mb-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
+              {typeData.description}
+            </p>
+
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {typeData.personality.map((trait, index) => (
+                <span
+                  key={trait}
+                  className={`rounded-full px-2.5 py-1 text-xs transition-all duration-300 ${cardStyle.chip} ${
+                    selected || isHovered ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-80'
+                  }`}
+                  style={{ transitionDelay: `${index * 45}ms` }}
+                >
+                  {trait}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between gap-4 text-xs text-gray-500 dark:text-gray-400">
+              <span className="truncate">默认名字：{typeData.defaultNames.slice(0, 2).join(' · ')}</span>
+              <span
+                className={`shrink-0 rounded-full px-2 py-1 font-medium transition-colors ${
+                  selected
+                    ? 'bg-pink-500/12 text-pink-700 dark:text-pink-200'
+                    : 'bg-black/5 text-gray-500 dark:bg-white/5 dark:text-gray-400'
+                }`}
+              >
+                {selected ? '已选择' : '点击选择'}
+              </span>
+            </div>
+          </Label>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SetupPage() {
   const router = useRouter();
@@ -190,41 +432,12 @@ export default function SetupPage() {
                   {(Object.keys(GIRLFRIEND_TYPES) as GirlfriendType[]).map((type) => {
                     const typeData = GIRLFRIEND_TYPES[type];
                     return (
-                      <div
+                      <GirlfriendTypeCard
                         key={type}
-                        className={`relative p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-lg ${
-                          selectedType === type
-                            ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20'
-                            : 'border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700'
-                        }`}
-                      >
-                        <RadioGroupItem value={type} id={type} className="sr-only" />
-                        <Label htmlFor={type} className="cursor-pointer">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-lg text-pink-700 dark:text-pink-300">
-                              {typeData.name}
-                            </h4>
-                            {selectedType === type && (
-                              <div className="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
-                                <Check className="w-4 h-4 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            {typeData.description}
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {typeData.personality.map((trait) => (
-                              <span
-                                key={trait}
-                                className="px-2 py-0.5 text-xs rounded-full bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300"
-                              >
-                                {trait}
-                              </span>
-                            ))}
-                          </div>
-                        </Label>
-                      </div>
+                        selected={selectedType === type}
+                        type={type}
+                        typeData={typeData}
+                      />
                     );
                   })}
                 </RadioGroup>
@@ -456,7 +669,7 @@ export default function SetupPage() {
                     </p>
                     <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border border-pink-200 dark:border-pink-800">
                       <p className="text-xs leading-relaxed italic text-gray-700 dark:text-gray-300 line-clamp-2">
-                        "{story.initialScenario}"
+                        &ldquo;{story.initialScenario}&rdquo;
                       </p>
                     </div>
                   </div>

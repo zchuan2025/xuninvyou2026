@@ -46,6 +46,116 @@ import {
   isPositiveInteraction
 } from '@/lib/affection';
 
+type PhotoGenerationMode = 'selfie' | 'requested';
+
+interface PhotoGenerationRequest {
+  mode: PhotoGenerationMode;
+  prompt: string;
+}
+
+function isSelfieRequest(message: string): boolean {
+  const normalized = message.toLowerCase();
+  const selfieKeywords = [
+    '自拍',
+    '看看你',
+    '看下你',
+    '见见你',
+    '你长什么样',
+    '你的样子',
+    '你的照片',
+    '你的图片',
+    '发你',
+    'your photo',
+    'selfie',
+  ];
+
+  return selfieKeywords.some(keyword => normalized.includes(keyword));
+}
+
+function buildRequestedPhoto(message: string): PhotoGenerationRequest {
+  if (isSelfieRequest(message)) {
+    return {
+      mode: 'selfie',
+      prompt: message,
+    };
+  }
+
+  return {
+    mode: 'requested',
+    prompt: message.trim(),
+  };
+}
+
+function buildSelfiePrompt(affectionLevel: AffectionLevel): string {
+  const scenes = [
+    'at home in cozy bedroom',
+    'in sunny outdoor cafe',
+    'near large window with natural light',
+    'in comfortable living room',
+    'in stylish cafe with warm lighting',
+    'in park during golden hour',
+    'at home near window with soft light',
+    'in modern cafe interior',
+    'in cozy apartment with plants',
+    'in bright home studio',
+  ];
+
+  const outfits = [
+    'wearing cute casual outfit',
+    'wearing elegant summer dress',
+    'wearing comfortable hoodie',
+    'wearing stylish blouse',
+    'wearing cute t-shirt and jeans',
+    'wearing flowy dress',
+    'wearing cozy sweater',
+    'wearing fashionable top',
+    'wearing casual business attire',
+    'wearing relaxed home clothes',
+  ];
+
+  const expressions = [
+    'with natural gentle smile',
+    'with playful expression',
+    'with soft loving gaze',
+    'with bright cheerful smile',
+    'with shy tender smile',
+    'with confident elegant look',
+    'with warm affectionate eyes',
+    'with sweet innocent smile',
+    'with relaxed peaceful expression',
+    'with engaging direct look',
+  ];
+
+  const angles = [
+    'straight-on selfie view',
+    'slight profile angle',
+    'three-quarter angle',
+    'natural candid capture',
+    'close-up intimate shot',
+    'medium shot showing shoulders',
+    'full body pose',
+    'casual tilted head pose',
+    'relaxed natural stance',
+    'dynamic lively pose',
+  ];
+
+  const randomScene = scenes[Math.floor(Math.random() * scenes.length)];
+  const randomOutfit = outfits[Math.floor(Math.random() * outfits.length)];
+  const randomExpression = expressions[Math.floor(Math.random() * expressions.length)];
+  const randomAngle = angles[Math.floor(Math.random() * angles.length)];
+
+  switch (affectionLevel) {
+    case 'friend':
+      return `friendly casual photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, natural lighting, daily life moment`;
+    case 'close':
+      return `intimate candid photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, soft warm lighting, relaxed atmosphere`;
+    case 'lover':
+      return `romantic affectionate photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, beautiful lighting, loving atmosphere`;
+    default:
+      return `simple natural photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, bright natural lighting, casual everyday moment`;
+  }
+}
+
 export default function GamePage() {
   const router = useRouter();
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -117,11 +227,14 @@ export default function GamePage() {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+      setInputMessage('');
 
-    // 检测用户是否主动要求发照片
-    const photoRequestKeywords = ['照片', '看看', '自拍', '图片', 'picture', 'photo', '看看你', '见见你', '见见', '给我看'];
-    const isRequestingPhoto = photoRequestKeywords.some(keyword => userMessage.content.includes(keyword));
+      // 检测用户是否主动要求发照片
+      const photoRequestKeywords = ['照片', '看看', '自拍', '图片', 'picture', 'photo', '看看你', '见见你', '见见', '给我看'];
+      const isRequestingPhoto = photoRequestKeywords.some(keyword => userMessage.content.includes(keyword));
+      const requestedPhoto = isRequestingPhoto
+        ? buildRequestedPhoto(userMessage.content)
+        : null;
 
     const aiMessageId = `ai-${Date.now()}`;
     const aiMessage: Message = {
@@ -242,9 +355,9 @@ export default function GamePage() {
       }
 
       // 如果用户主动要求发照片，延迟生成照片
-      if (isRequestingPhoto) {
+      if (requestedPhoto) {
         setTimeout(() => {
-          handleGeneratePhoto();
+          handleGeneratePhoto(updatedState, requestedPhoto);
         }, 500);
       }
 
@@ -345,7 +458,7 @@ export default function GamePage() {
         body: JSON.stringify({
           prompt: scenePrompt,
           referenceImage: currentState.girlfriendPhoto,
-          gameState: currentState,
+          mode: 'selfie',
         }),
       });
 
@@ -434,86 +547,23 @@ export default function GamePage() {
     }
   };
 
-  const handleGeneratePhoto = async () => {
-    if (!gameState || isGeneratingPhoto) return;
+  const handleGeneratePhoto = async (
+    currentState: GameState | null = gameState,
+    request: PhotoGenerationRequest = {
+      mode: 'selfie',
+      prompt: currentState ? buildSelfiePrompt(currentState.affectionLevel) : '',
+    },
+  ) => {
+    if (!currentState || isGeneratingPhoto) return;
 
     // 完全移除好感度限制，任何好感度都可以生成照片
     setIsGeneratingPhoto(true);
 
     try {
-      // 生成多样化的场景描述
-      const scenes = [
-        'at home in cozy bedroom',
-        'in sunny outdoor cafe',
-        'near large window with natural light',
-        'in comfortable living room',
-        'in stylish cafe with warm lighting',
-        'in park during golden hour',
-        'at home near window with soft light',
-        'in modern cafe interior',
-        'in cozy apartment with plants',
-        'in bright home studio'
-      ];
-
-      const outfits = [
-        'wearing cute casual outfit',
-        'wearing elegant summer dress',
-        'wearing comfortable hoodie',
-        'wearing stylish blouse',
-        'wearing cute t-shirt and jeans',
-        'wearing flowy dress',
-        'wearing cozy sweater',
-        'wearing fashionable top',
-        'wearing casual business attire',
-        'wearing relaxed home clothes'
-      ];
-
-      const expressions = [
-        'with natural gentle smile',
-        'with playful expression',
-        'with soft loving gaze',
-        'with bright cheerful smile',
-        'with shy tender smile',
-        'with confident elegant look',
-        'with warm affectionate eyes',
-        'with sweet innocent smile',
-        'with relaxed peaceful expression',
-        'with engaging direct look'
-      ];
-
-      const angles = [
-        'straight-on selfie view',
-        'slight profile angle',
-        'three-quarter angle',
-        'natural candid capture',
-        'close-up intimate shot',
-        'medium shot showing shoulders',
-        'full body pose',
-        'casual tilted head pose',
-        'relaxed natural stance',
-        'dynamic lively pose'
-      ];
-
-      // 随机选择元素
-      const randomScene = scenes[Math.floor(Math.random() * scenes.length)];
-      const randomOutfit = outfits[Math.floor(Math.random() * outfits.length)];
-      const randomExpression = expressions[Math.floor(Math.random() * expressions.length)];
-      const randomAngle = angles[Math.floor(Math.random() * angles.length)];
-
-      let scenePrompt = '';
-      switch (gameState.affectionLevel) {
-        case 'friend':
-          scenePrompt = `friendly casual photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, natural lighting, daily life moment`;
-          break;
-        case 'close':
-          scenePrompt = `intimate candid photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, soft warm lighting, relaxed atmosphere`;
-          break;
-        case 'lover':
-          scenePrompt = `romantic affectionate photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, beautiful lighting, loving atmosphere`;
-          break;
-        default:
-          scenePrompt = `simple natural photo, ${randomScene}, ${randomOutfit}, ${randomExpression}, ${randomAngle}, bright natural lighting, casual everyday moment`;
-      }
+      const prompt =
+        request.mode === 'selfie'
+          ? request.prompt || buildSelfiePrompt(currentState.affectionLevel)
+          : request.prompt;
 
       const response = await fetch('/api/generate-photo', {
         method: 'POST',
@@ -521,28 +571,32 @@ export default function GamePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: scenePrompt,
-          referenceImage: gameState.girlfriendPhoto,
-          gameState: gameState,
+          prompt,
+          referenceImage: currentState.girlfriendPhoto,
+          mode: request.mode,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        const photoCaption =
+          request.mode === 'selfie'
+            ? '给你看看我刚才拍的自拍吧～'
+            : '按你刚才说的，我给你找了一张更贴近要求的图～';
         const photoMessage: Message = {
           id: `photo-${Date.now()}`,
           role: 'assistant',
-          content: `给你看看我刚才拍的自拍吧～\n\n![照片](${data.imageUrl})`,
+          content: `${photoCaption}\n\n![照片](${data.imageUrl})`,
           timestamp: Date.now(),
         };
 
         setMessages(prev => [...prev, photoMessage]);
 
         const updatedState = {
-          ...gameState,
-          messages: [...gameState.messages, photoMessage],
-          unlockedPhotos: [...gameState.unlockedPhotos, data.imageUrl],
+          ...currentState,
+          messages: [...currentState.messages, photoMessage],
+          unlockedPhotos: [...currentState.unlockedPhotos, data.imageUrl],
           lastActiveTime: Date.now(),
         };
 
@@ -752,7 +806,7 @@ export default function GamePage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleGeneratePhoto}
+                onClick={() => handleGeneratePhoto()}
                 disabled={isGeneratingPhoto}
                 className="flex-shrink-0"
               >
