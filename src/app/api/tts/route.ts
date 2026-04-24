@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { getBusinessErrorMessage, getHttpStatusFromError } from '@/lib/ai/errors';
 import { synthesizeSpeech } from '@/lib/ai/services/tts-service';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const { text, girlfriendType } = await request.json();

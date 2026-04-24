@@ -3,6 +3,9 @@ import { GameState } from '@/types';
 import { getBusinessErrorMessage } from '@/lib/ai/errors';
 import { streamGameChat } from '@/lib/ai/services/chat-service';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const { message, gameState } = await request.json();

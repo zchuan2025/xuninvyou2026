@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { getBusinessErrorMessage, getHttpStatusFromError } from '@/lib/ai/errors';
 import { generateConversationPhoto } from '@/lib/ai/services/image-service';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const {
